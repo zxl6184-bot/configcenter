@@ -1,0 +1,72 @@
+# specs/001-nats-valkey-iotdb-support/test-services/docker-compose.yaml
+# 自动生成 — 请勿手动修改，由 go-test-suite skill 维护
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: cc-test-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: configcenter_test
+    ports:
+      - "15432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - test-network
+
+  nats:
+    image: appfactory.arfa.wise-paas.com/iotedge/nats:2.10.7
+    container_name: cc-test-nats
+    ports:
+      - "14222:4222"
+    healthcheck:
+      test: ["CMD", "nats-server", "--help"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - test-network
+
+  valkey:
+    image: redis:alpine
+    container_name: cc-test-valkey
+    ports:
+      - "16379:6379"
+    command: >
+      sh -c "echo 'user admin on +@all ~* >testpass' > /etc/redis.acl &&
+             echo 'user default off' >> /etc/redis.acl &&
+             redis-server --aclfile /etc/redis.acl"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "testpass", "--user", "admin", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - test-network
+
+  iotdb:
+    image: apache/iotdb:2.0.8-standalone
+    container_name: cc-test-iotdb
+    ports:
+      - "18082:6667"
+    volumes:
+      - ./iotdb-system.properties:/iotdb/conf/iotdb-system.properties:ro
+      - ./iotdb-datanode.properties:/iotdb/conf/iotdb-datanode.properties:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo >/dev/tcp/localhost/6667' 2>/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    name: test-network
+    driver: bridge

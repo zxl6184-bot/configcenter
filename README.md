@@ -6,18 +6,18 @@
 
 ## 1. 关联项目
 
-| 项目 | 本地路径 | Git 远端 | Go Module | 说明 |
-| ---- | -------- | -------- | --------- | ---- |
-| **configcenter（服务端）** | `D:\gopath\src\configcenter` | `https://Advantech-EBO@dev.azure.com/Advantech-EBO/IoTSuite/_git/configcenter` | `configcenter` | 配置中心服务，负责服务注册与发现、数据库实例统一分配 |
-| **configcenter-sdk（SDK）** | `D:\gopath\src\configcenter-sdk` | `https://dev.azure.com/Advantech-EBO/IoTSuite-Core-Component/_git/configcenter` | `dev.azure.com/Advantech-EBO/IoTSuite-Core-Component/_git/configcenter.git` | Go SDK，供各微服务接入配置中心使用 |
+| 项目                              | 本地路径                                                   | Git 远端                                                                          | Go Module                                                                     | 说明                                                 |
+| --------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------- |
+| **configcenter（服务端）**  | `/home/wh8199/xiaolin.zhang/gopath/src/configcente`      | `https://Advantech-EBO@dev.azure.com/Advantech-EBO/IoTSuite/_git/configcenter`  | `configcenter`                                                              | 配置中心服务，负责服务注册与发现、数据库实例统一分配 |
+| **configcenter-sdk（SDK）** | `/home/wh8199/xiaolin.zhang/gopath/src/configcenter-sdk` | `https://dev.azure.com/Advantech-EBO/IoTSuite-Core-Component/_git/configcenter` | `dev.azure.com/Advantech-EBO/IoTSuite-Core-Component/_git/configcenter.git` | Go SDK，供各微服务接入配置中心使用                   |
 
 ### 1.1 版本对应关系
 
-| 维度 | configcenter（服务端） | configcenter-sdk |
-| ---- | ---------------------- | ---------------- |
-| 当前版本 | `2.1.6-alpha1`（Makefile `TAG`） | `v0.17.0` |
-| 依赖关系 | 服务端 go.mod 引用 SDK `v0.17.0` | — |
-| Go 版本 | 1.25.0 | 1.18 |
+| 维度     | configcenter（服务端）               | configcenter-sdk |
+| -------- | ------------------------------------ | ---------------- |
+| 当前版本 | `2.1.6-alpha1`（Makefile `TAG`） | `v0.17.0`      |
+| 依赖关系 | 服务端 go.mod 引用 SDK`v0.17.0`    | —               |
+| Go 版本  | 1.25.0                               | 1.18             |
 
 > 版本号遵循 Semantic Versioning 2.0.0，管理细则见 `.claude/rules/版本管理规范.md`。
 
@@ -53,7 +53,7 @@ go env -w GOPRIVATE=dev.azure.com
 
 ---
 
-## 3. configcenter 服务端（`D:\gopath\src\configcenter`）
+## 3. configcenter 服务端（`/home/wh8199/xiaolin.zhang/gopath/src/configcente`）
 
 ### 3.1 功能简介
 
@@ -65,16 +65,16 @@ go env -w GOPRIVATE=dev.azure.com
 
 ### 3.2 目录结构
 
-| 路径 | 说明 |
-| ---- | ---- |
-| `cmd/configcenter` | 服务主程序（`main.go` + `config.toml`） |
-| `cmd/network` | 网络相关工具 |
-| `pkg/config` | 配置加载 |
-| `pkg/configcenter` | 服务核心逻辑（注册、实例分配等） |
-| `pkg/dotconfig` / `pkg/utils` | 工具库 |
-| `charts/` `docker-compose/` `dockerfile/` | 各平台部署编排 |
-| `ip_monitor/` | 主机 IP 监控 |
-| `static/` | 静态资源 |
+| 路径                                            | 说明                                        |
+| ----------------------------------------------- | ------------------------------------------- |
+| `cmd/configcenter`                            | 服务主程序（`main.go` + `config.toml`） |
+| `cmd/network`                                 | 网络相关工具                                |
+| `pkg/config`                                  | 配置加载                                    |
+| `pkg/configcenter`                            | 服务核心逻辑（注册、实例分配等）            |
+| `pkg/dotconfig` / `pkg/utils`               | 工具库                                      |
+| `charts/` `docker-compose/` `dockerfile/` | 各平台部署编排                              |
+| `ip_monitor/`                                 | 主机 IP 监控                                |
+| `static/`                                     | 静态资源                                    |
 
 ### 3.3 关键配置
 
@@ -107,7 +107,7 @@ make          # 构建镜像，参考 build.mk
 
 ---
 
-## 4. configcenter SDK（`D:\gopath\src\configcenter-sdk`）
+## 4. configcenter SDK（`/home/wh8199/xiaolin.zhang/gopath/src/configcenter-sdk`）
 
 ### 4.1 功能简介
 
@@ -120,14 +120,14 @@ SDK 降低微服务接入配置中心的整合难度，提供：
 
 ### 4.2 目录结构
 
-| 路径 | 说明 |
-| ---- | ---- |
-| `pkg/configcenter` | gRPC / protobuf 生成代码 |
-| `pkg/module` | Module 核心逻辑（注册、连接、配置获取） |
-| `dsn` / `connectstring` / `dccs` / `portrange` | DSN 解析、连接串、端口范围等工具 |
-| `protos/configcenter` | protobuf 定义（`make protobuf` 重新生成） |
-| `examples/` | 各场景示例（注册、资源组、订阅、MCP 等） |
-| `wiki/` | 设计文档（如 Redis 连接模式与 DSN 约定） |
+| 路径                                                   | 说明                                        |
+| ------------------------------------------------------ | ------------------------------------------- |
+| `pkg/configcenter`                                   | gRPC / protobuf 生成代码                    |
+| `pkg/module`                                         | Module 核心逻辑（注册、连接、配置获取）     |
+| `dsn` / `connectstring` / `dccs` / `portrange` | DSN 解析、连接串、端口范围等工具            |
+| `protos/configcenter`                                | protobuf 定义（`make protobuf` 重新生成） |
+| `examples/`                                          | 各场景示例（注册、资源组、订阅、MCP 等）    |
+| `wiki/`                                              | 设计文档（如 Redis 连接模式与 DSN 约定）    |
 
 ### 4.3 在业务服务中引入 SDK
 
@@ -192,6 +192,6 @@ make protobuf
 
 ## 7. 维护记录
 
-| 日期 | 变更 |
-| ---- | ---- |
+| 日期       | 变更                                       |
+| ---------- | ------------------------------------------ |
 | 2026-08-18 | 初始化本工作区文档，梳理关联项目与环境准备 |
