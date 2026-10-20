@@ -13,7 +13,7 @@ import (
 
 func main() {
 	var (
-		serviceName = flag.String("name", "iotdb-client1", "service name registered in config center")
+		serviceName = flag.String("name", "iotdb-client2", "service name registered in config center")
 		routerName  = flag.String("router", "API", "router name of this client service")
 		address     = flag.String("address", "http://127.0.0.1:8080", "router address of this client service")
 		timeout     = flag.Duration("timeout", 60*time.Second, "timeout to wait for the iotdb instance")
@@ -35,26 +35,6 @@ func main() {
 				// apply for an IoTDB instance, the config center
 				// creates an independent database and user for this service
 				ServiceInstanceType: configcenter.ServiceInstance_IoTDB,
-			}, {
-				// apply for an IoTDB instance, the config center
-				// creates an independent database and user for this service
-				ServiceInstanceType: configcenter.ServiceInstance_Postgres,
-			}, {
-				// apply for an IoTDB instance, the config center
-				// creates an independent database and user for this service
-				ServiceInstanceType: configcenter.ServiceInstance_Mongodb,
-			}, {
-				// apply for an IoTDB instance, the config center
-				// creates an independent database and user for this service
-				ServiceInstanceType: configcenter.ServiceInstance_RabbitMQ,
-			}, {
-				// apply for an IoTDB instance, the config center
-				// creates an independent database and user for this service
-				ServiceInstanceType: configcenter.ServiceInstance_IoTDB,
-			}, {
-				// apply for an IoTDB instance, the config center
-				// creates an independent database and user for this service
-				ServiceInstanceType: configcenter.ServiceInstance_Redis,
 			},
 		},
 		Routers: []*configcenter.Router{
