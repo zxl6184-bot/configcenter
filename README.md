@@ -51,6 +51,25 @@ go env -w GOPRIVATE=dev.azure.com
 - **技能（skills）**：`speckit-*`（规范驱动开发工作流）、`knowledge-doc-standards`（知识库）、`session-handoff`（会话交接）、`weekly-report`（周报）等
 - **命令（commands）**：`spec`、`superpowers`
 
+### 2.4 QA 测试环境（SSH）
+
+QA 测试机的 SSH 登录信息（同一份信息也记录在本地 `.env` 中）：
+
+| 项目    | `.env` 变量          | 值                          |
+| ------- | -------------------- | --------------------------- |
+| 主机 IP | `QA_SSH_HOST`      | `172.21.92.10`            |
+| 用户名  | `QA_SSH_USER`      | `ubuntu`                  |
+| 密码    | `QA_SSH_PASSWORD`  | `Cherry@123`              |
+
+```bash
+set -a; source .env; set +a   # 加载 QA_SSH_* 变量
+
+ssh "${QA_SSH_USER}@${QA_SSH_HOST}"
+# 密码：${QA_SSH_PASSWORD}
+```
+
+> ⚠️ 上述凭据属于敏感信息，仅限内网测试使用。`.env` 目前未被 `.gitignore` 忽略，提交前请确认不要把本地凭据文件加入版本库。
+
 ---
 
 ## 3. configcenter 服务端（`/home/wh8199/xiaolin.zhang/gopath/src/configcente`）
@@ -195,3 +214,4 @@ make protobuf
 | 日期       | 变更                                       |
 | ---------- | ------------------------------------------ |
 | 2026-08-18 | 初始化本工作区文档，梳理关联项目与环境准备 |
+| 2026-10-21 | 补充 QA 测试环境访问信息（2.4 节）         |
