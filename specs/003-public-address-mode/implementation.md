@@ -7,11 +7,11 @@
 - `isSuffixMode` 使用布尔开关：默认 `false` 为前缀模式（兼容旧配置），`true` 为后缀模式。不保留整数枚举或扩展性设计。
 - 前缀模式沿用 Ingress 地址转换及既有 K8s 启动域名必填校验。
 - 后缀地址拼接不判断平台：`domain` 非空时使用去除首尾空白后的完整域名，为空时使用去除首尾空白后的 `GlobalIP`，再按协议、入口端口和前端路径生成地址。
-- 后缀模式由 `isSSL` 选择 HTTP/HTTPS 及 `suffixHttpPort`/`suffixHttpsPort`，默认 80/443，对应协议的默认端口省略。
+- 后缀模式由 `isSSL` 选择 HTTP/HTTPS，使用统一入口端口 `suffixPort`，默认 0，表示按协议使用 HTTP 80 / HTTPS 443；非零值直接作为实际入口端口，对应协议的默认端口省略。
 - 前端路径优先取 router 的 `uriPrefix`，为空时按服务名和 router 名精确查 Excel 固定第六列 `uriprefix`。两处都为空时，`publicAddress` 为空，静默处理，不能影响注册和查询请求。
 - 后端 `router.address` 的路径、协议、端口不参与后缀地址生成。ConfigCenter 自身前端路径为 `/configcenter`。
 - 继续遵循 `autoGeneratePublic` 和已有手动公网地址的优先级。
-- public config 新增 `is_suffix_mode`、`is_ssl`、`suffix_http_port`、`suffix_https_port`，沿用字符串映射类型。
+- public config 新增 `is_suffix_mode`、`is_ssl`、`suffix_port`，沿用字符串映射类型。
 - 新增独立的 `iotedge-iotdb` 共享组，仅包含 `iotdb` 资源及 `IoTEdge`、`IoTEdge-Worker` 两个服务；原有共享组保持原样，四份部署配置同步。
 
 ## 实现位置
@@ -52,3 +52,20 @@ Docker/二进制实际开放后缀地址时，需要统一网关按路径转发�
 - SDK URI 路径与公共配置键：`2970721`。
 
 提交前 SDK 独立构建、服务端构建、资源组及 Swagger JSON 校验均通过。后缀模式按最新约定优先使用 domain，否则使用 GlobalIP，拼接逻辑不判断平台。以上均为 develop-2.1.7 分支的本地提交，未推送或发布。
+
+## 2026-11-11 配置简化
+
+- 将双端口配置合并为 `suffixPort`，REST/gRPC 对应字符串字段为 `suffix_port`；由 `isSSL` 决定 HTTP/HTTPS，默认 0，表示按协议使用 HTTP 80 / HTTPS 443；非零值直接作为实际入口端口。
+- SDK 统一使用 `module.SuffixPort`，TOML、命令行、Helm、Compose 和接口文档同步。旧双端口参数不再使用，部署需迁移为单端口。
+- Public config 停止自动生成 `enableQuota`、`enableTwinspace` 和旧双端口字段，文件中的自定义键继续保留。平台和 globalIP 继续由实际运行环境决定。
+- 本次验证：HTTP/HTTPS 默认与自定义端口、公共配置启动值覆盖与自定义键保留测试通过；配置包测试、SDK 模块编译、服务端构建、Helm 渲染、Compose 解析及 Swagger JSON 校验通过。Compose 原有多行 command 解析问题一并修复。未部署或推送。
+
+### 默认端口约定
+
+按用户最新确认恢复 `suffixPort=0`：省略或为 0 时，`isSSL=false` 使用 80，`isSSL=true` 使用 443。部署示例统一使用 0。启动校验允许 0–65535；接口输出和地址生成共用解析后的实际端口。
+
+### 配置简化提交
+
+- 服务端：`86249c3`，统一端口配置、部署示例、接口说明及测试。
+- SDK：`f865efd`，统一端口常量、接口说明及第三方接入指南。
+- 两个仓库均提交至 `develop-2.1.7`，尚未推送或发布 Tag。

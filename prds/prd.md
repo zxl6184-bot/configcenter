@@ -26,10 +26,11 @@
 | 配置参数 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | `isSuffixMode` | bool | `false` | 是否启用后缀模式；`false` 沿用现有前缀模式 |
-| `suffixHttpPort` | int | `80` | 后缀模式对外 HTTP 入口端口 |
-| `suffixHttpsPort` | int | `443` | 后缀模式对外 HTTPS 入口端口 |
+| `suffixPort` | int | `0` | 0 表示协议默认端口：HTTP 80 / HTTPS 443；1–65535 表示实际入口端口 |
 
 复用现有 `isSSL` 配置决定公网地址使用 HTTP 还是 HTTPS，不新增独立的 SSL 开关。后缀模式端口表示对外访问的入口端口，不是服务内部监听端口。
+
+`suffixPort` 默认 0，按 `isSSL` 使用 HTTP 80 / HTTPS 443；非零值直接作为实际入口端口；旧双端口配置需迁移为单端口。
 
 旧配置未提供新增参数时，应保持现有前缀模式行为。相关配置需要在 Kubernetes、Docker Compose 和二进制部署中可用。
 
@@ -55,8 +56,8 @@
 
 | 条件 | 协议 | 入口端口 |
 | --- | --- | --- |
-| `isSSL=false` | HTTP | `suffixHttpPort` |
-| `isSSL=true` | HTTPS | `suffixHttpsPort` |
+| `isSSL=false` | HTTP | `suffixPort` |
+| `isSSL=true` | HTTPS | `suffixPort` |
 
 使用对应协议的默认端口时，地址中省略端口；使用非默认端口时显式携带端口。
 
@@ -99,12 +100,11 @@ ConfigCenter 自身使用 `/configcenter` 作为后缀模式路径。
 
 ## 6. Public Config 对外字段
 
-在 `GET /v1/public/configs` 的原有返回内容中新增以下四个字段，保留原有字段。接口继续使用字符串形式返回配置值。
+在 `GET /v1/public/configs` 的原有返回内容中提供以下三个字段，并停止自动生成 `enableQuota`、`enableTwinspace` 和旧双端口字段；文件自定义键保留。接口继续使用字符串形式返回配置值。
 
 | 字段 | 示例值 | 说明 |
 | --- | --- | --- |
-| `suffix_http_port` | `"80"` | 后缀模式的对外 HTTP 入口端口 |
-| `suffix_https_port` | `"443"` | 后缀模式的对外 HTTPS 入口端口 |
+| `suffix_port` | `"433"` | 统一公网入口端口；协议由 `is_ssl` 决定，配置省略或为 0 时按协议使用 HTTP 80 / HTTPS 443 |
 | `is_suffix_mode` | `"false"` | 是否启用后缀模式；`false` 为前缀模式，`true` 为后缀模式 |
 | `is_ssl` | `"false"` | 是否使用 HTTPS，来源于现有 `isSSL` 配置 |
 
@@ -112,20 +112,19 @@ ConfigCenter 自身使用 `/configcenter` 作为后缀模式路径。
 
 ```json
 {
-  "suffix_http_port": "80",
-  "suffix_https_port": "443",
+  "suffix_port": "433",
   "is_suffix_mode": "false",
-  "is_ssl": "false"
+  "is_ssl": "true"
 }
 ```
 
-以上仅展示新增字段，实际响应还包含原有公共配置。
+以上仅展示模式、协议和端口字段，实际响应还包含环境信息及自定义公共配置。
 
 ## 7. SDK 与接口同步
 
 - 在独立 `configcenter-sdk` 项目的 Router 数据结构及 protobuf 定义中增加 `uriPrefix`，同步生成代码。
 - 服务端注册、存储和查询链路应保留并传递该字段。
-- SDK 增加四个新增公共配置字段对应的键常量。
+- SDK 增加三个公共配置字段对应的键常量（`IsSuffixMode`、`IsSSL`、`SuffixPort`）。
 - 同步更新接口说明和部署配置说明。
 - 老客户端未传 `uriPrefix` 时继续兼容，按 Excel 兜底或空公网地址规则处理。
 
@@ -158,6 +157,6 @@ ConfigCenter 自身使用 `/configcenter` 作为后缀模式路径。
 5. 注册路径优先于 Excel；注册值为空时使用 Excel 对应记录。
 6. 两处路径均为空时返回空 `publicAddress`，不产生注册或查询错误。
 7. 手动公网地址和 `autoGeneratePublic` 原有行为保持兼容。
-8. Public Config 返回新增四个字段，类型为字符串，原有字段保留。
+8. Public Config 返回 `is_suffix_mode`、`is_ssl`、`suffix_port` 三个字符串字段，停止自动生成旧双端口字段、`enableQuota` 和 `enableTwinspace`，文件自定义键保留。
 9. 新旧 SDK 客户端均可按上述兼容规则注册和查询服务。
 10. 各部署配置及 Excel 保持同步，后缀拼接逻辑不按平台区分。
