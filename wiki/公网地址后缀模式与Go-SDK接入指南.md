@@ -25,11 +25,11 @@ SDK 仓库：[configcenter SDK（Azure DevOps）](https://dev.azure.com/Advantec
 
 | 项目/版本                | 当前状态                                                             | 使用说明                                                                                   |
 | ------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| SDK `v0.18.0`          | 已发布，本文按该 Tag 核对                                             | 包含 `Router.UriPrefix`、`module.IsSuffixMode`、`module.IsSSL` 和 `module.SuffixPort` |
-| SDK `v0.17.0` 及更早版本 | 不包含本次新增的 `UriPrefix` 及模式、协议、端口公共配置常量          | 本功能不能按这些 Tag 接入                                                                  |
+| SDK `v0.18.0`          | 已发布，本文按该 Tag 核对                                             | 新增 `Router.UriPrefix` 字段，用于声明服务在统一入口上的公网路径                          |
+| SDK `v0.17.0` 及更早版本 | 不包含 `Router.UriPrefix` 字段                                       | 本功能不能按这些 Tag 接入                                                                  |
 | 服务端 `v2.1.7`        | 与本文配置项配套的服务端版本，尚未发布                                 | 部署方须提供包含单端口 `suffixPort` 的构建                                                |
 
-SDK 已发布 `v0.18.0`，第三方可直接按该 Tag 接入。服务端版本请向提供方确认，确保其构建包含本文的 `isSuffixMode`、`isSSL`、`suffixPort` 配置项。
+SDK 已发布 `v0.18.0`，第三方可直接按该 Tag 接入。接入时只需在 `Router` 中填写 `UriPrefix`，公网地址由配置中心根据服务端配置生成。`isSuffixMode`、`isSSL`、`suffixPort` 是配置中心服务端的配置项，由部署方维护，第三方服务不需要读取或设置。
 
 ### 2.1 安装 SDK
 
@@ -115,9 +115,9 @@ Windows PowerShell：
 $env:CONFIG_CENTER_ADDRESS = "192.168.55.1:10087"
 ```
 
-`isSSL` 决定生成的公网 URL 使用什么协议，不会自动改变 SDK 的 gRPC 连接方式。
+`isSSL` 是配置中心服务端的配置项，决定生成的公网 URL 使用什么协议；它不会改变 SDK 的 gRPC 连接方式。
 
-### 4.2 注册路径并读取公共配置、公网地址
+### 4.2 注册路径并读取公网地址
 
 以下示例基于 SDK `v0.18.0`。将 `Address` 换成配置中心及网关可访问的实际后端地址。
 
@@ -129,7 +129,6 @@ import (
     "log"
     "os"
     "os/signal"
-    "strconv"
     "time"
 
     "dev.azure.com/Advantech-EBO/IoTSuite-Core-Component/_git/configcenter.git/pkg/configcenter"
@@ -161,48 +160,38 @@ func main() {
         case <-ctx.Done():
             return
         case <-ticker.C:
-            modeText, modeOK := m.GetPublicConfig(module.IsSuffixMode)
-            sslText, sslOK := m.GetPublicConfig(module.IsSSL)
-            portText, portOK := m.GetPublicConfig(module.SuffixPort)
-            if !modeOK || !sslOK || !portOK {
-                log.Print("waiting for public configs; verify server version if this persists")
-                continue
-            }
-
-            suffixMode, modeErr := strconv.ParseBool(modeText)
-            ssl, sslErr := strconv.ParseBool(sslText)
-            port, portErr := strconv.Atoi(portText)
-            if modeErr != nil || sslErr != nil || portErr != nil || port < 1 || port > 65535 {
-                log.Print("invalid public config values")
-                continue
-            }
-
             publicAddress, found := m.GetRouterPublicAddress("my-service", "API")
             if !found || publicAddress == "" {
                 log.Print("waiting for public address; check path and server configuration")
                 continue
             }
-            log.Printf("suffixMode=%t ssl=%t port=%d publicAddress=%s",
-                suffixMode, ssl, port, publicAddress)
+            log.Printf("publicAddress=%s", publicAddress)
         }
     }
 }
 ```
 
-将代码保存为业务项目中的 `main.go`，执行 `go mod tidy`、`go build`，配置环境变量后运行。示例只注册 Router，不申请数据库实例。
+将代码保存为业务项目中的 `main.go`，执行 `go mod tidy`、`go build`，配置环境变量后运行。示例只注册 Router（含 `UriPrefix`），不申请数据库实例；`isSuffixMode`、`isSSL`、`suffixPort` 由配置中心服务端配置，业务代码不需要读取。
 
-SDK 默认保活与配置刷新间隔为 5 秒；刚启动时，配置和服务缓存可能尚未就绪。应处理键不存在、Router 不存在及空公网地址，不能把创建 `Module` 视为已完成注册和发现。
+SDK 默认保活与配置刷新间隔为 5 秒；刚启动时，配置和服务缓存可能尚未就绪。应处理 Router 不存在及空公网地址，不能把创建 `Module` 视为已完成注册和发现。
 
-`module.SuffixPort` 为 `v0.18.0` 新增常量。不要继续读取旧的 `suffix_http_port`、`suffix_https_port`，也不要继续使用旧的 `module.SuffixHttpPort`、`module.SuffixHttpsPort`。
+`Router.UriPrefix` 是 SDK `v0.18.0` 新增的注册字段。旧版 SDK 注册的 Router 没有该字段，只能依赖配置中心按服务名和 Router 名匹配端口 Excel 中的 `uriprefix` 兜底。
 
-### 4.3 新增字段与公共配置键
+### 4.3 SDK 新增字段与服务端配置
 
-| SDK/API 字段                                        | 含义                                                        |
-| --------------------------------------------------- | ----------------------------------------------------------- |
-| `configcenter.Router.UriPrefix`                   | Go 字段；protobuf 字段号为 14，JSON 字段名为 `uriPrefix`  |
-| `module.IsSuffixMode` / `is_suffix_mode`        | 字符串 `"false"` 或 `"true"`                            |
-| `module.IsSSL` / `is_ssl`                       | 字符串 `"false"` 或 `"true"`                            |
-| `module.SuffixPort` / `"suffix_port"`             | 字符串形式的实际入口端口，如 `"80"`、`"443"`、`"433"` |
+SDK 侧新增的接入字段只有一个：
+
+| SDK/API 字段                      | 含义                                                       |
+| --------------------------------- | ---------------------------------------------------------- |
+| `configcenter.Router.UriPrefix` | Go 字段；protobuf 字段号为 14，JSON 字段名为 `uriPrefix` |
+
+以下公共配置键由配置中心根据服务端配置生成，仅供部署方联调检查，不是 SDK 接入所需，第三方业务代码不需要读取：
+
+| 公共配置键        | 含义                                                       |
+| ----------------- | ---------------------------------------------------------- |
+| `is_suffix_mode` | 字符串 `"false"` 或 `"true"`，对应服务端 `isSuffixMode` |
+| `is_ssl`         | 字符串 `"false"` 或 `"true"`，对应服务端 `isSSL`        |
+| `suffix_port`    | 字符串形式的实际入口端口，如 `"80"`、`"443"`、`"433"`，对应服务端 `suffixPort` |
 
 服务端启动参数 `suffixPort=0` 表示使用默认值；公共接口返回的是**解析后的实际端口**，不会因此返回 `"0"`。
 
@@ -248,7 +237,6 @@ curl http://192.168.55.1:10087/v1/services
 | 现象                                               | 检查项                                                                          |
 | -------------------------------------------------- | ------------------------------------------------------------------------------- |
 | Go 编译提示 `unknown field UriPrefix`            | SDK 版本过旧；升级到 `v0.18.0`                                                  |
-| Go 编译提示 `undefined: module.SuffixPort`       | SDK 版本低于 `v0.18.0`；升级到该 Tag                                            |
 | 公共配置中没有 `suffix_port`，却有两个旧端口字段 | 服务端仍是旧构建；升级到包含单端口配置的构建                                    |
 | 返回的公网地址为空                                 | 检查 `autoGeneratePublic`、注册路径、Excel 兜底路径；刚启动时还需等待缓存刷新 |
 | 地址仍沿用原有前缀规则                             | 检查 `isSuffixMode` 是否为 `true`，以及实际读取的 TOML/启动参数             |
