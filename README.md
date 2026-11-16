@@ -2,6 +2,8 @@
 
 第三方接入文档：[公网地址后缀模式与 Go SDK 接入指南](wiki/公网地址后缀模式与Go-SDK接入指南.md)。
 
+> SDK 对外发布库：[configcenter-go-sdk（Azure DevOps）](https://dev.azure.com/Advantech-EBO/WISE-IoT_ProductTeam_B/_git/configcenter-go-sdk)。本地 SDK 开发完成后，分支与 tag 会同步推送到该仓库，供外部使用。
+
 > 本目录是一个 **开发管控工作区**，用于在 Claude Code 中管理 configcenter 服务与 SDK 的开发、构建和发布。本工作区本身不是代码仓库，代码存放在下方两个关联项目中。
 
 ---
@@ -12,14 +14,15 @@
 | --------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------- |
 | **configcenter（服务端）**  | `/home/wh8199/xiaolin.zhang/gopath/src/configcente`      | `https://Advantech-EBO@dev.azure.com/Advantech-EBO/IoTSuite/_git/configcenter`  | `configcenter`                                                              | 配置中心服务，负责服务注册与发现、数据库实例统一分配 |
 | **configcenter-sdk（SDK）** | `/home/wh8199/xiaolin.zhang/gopath/src/configcenter-sdk` | `https://dev.azure.com/Advantech-EBO/IoTSuite-Core-Component/_git/configcenter` | `dev.azure.com/Advantech-EBO/IoTSuite-Core-Component/_git/configcenter.git` | Go SDK，供各微服务接入配置中心使用                   |
+| **configcenter-go-sdk（SDK 对外发布库）** | 同 SDK                                            | `https://dev.azure.com/Advantech-EBO/WISE-IoT_ProductTeam_B/_git/configcenter-go-sdk` | 同上                                                                          | 对外发布库，SDK 的分支与 tag 会同步推送到此仓库      |
 
 ### 1.1 版本对应关系
 
 | 维度     | configcenter（服务端）               | configcenter-sdk |
 | -------- | ------------------------------------ | ---------------- |
-| 当前版本 | `2.1.6-alpha1`（Makefile `TAG`） | `v0.17.0`      |
-| 依赖关系 | 服务端 go.mod 引用 SDK`v0.17.0`    | —               |
-| Go 版本  | 1.25.0                               | 1.18             |
+| 当前版本 | `2.1.7-alpha1`（Makefile `TAG`） | `v0.18.0`      |
+| 依赖关系 | 服务端 go.mod 引用 SDK`v0.18.0`    | —               |
+| Go 版本  | 1.25.0                               | 1.22             |
 
 > 版本号遵循 Semantic Versioning 2.0.0，管理细则见 `.claude/rules/版本管理规范.md`。
 
@@ -129,6 +132,8 @@ make          # 构建镜像，参考 build.mk
 ---
 
 ## 4. configcenter SDK（`/home/wh8199/xiaolin.zhang/gopath/src/configcenter-sdk`）
+
+> 对外发布库：[configcenter-go-sdk（Azure DevOps）](https://dev.azure.com/Advantech-EBO/WISE-IoT_ProductTeam_B/_git/configcenter-go-sdk)。本地 SDK 开发完成后，分支与 tag 会同步推送到该仓库，供外部使用。
 
 ### 4.1 功能简介
 
