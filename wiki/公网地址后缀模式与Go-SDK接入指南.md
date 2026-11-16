@@ -1,6 +1,6 @@
 # 公网地址后缀模式与 Go SDK 接入指南
 
-适用对象：接入配置中心的第三方 Go 服务开发者、前端集成人员和部署人员。版本核对日期：2026-11-11。
+适用对象：接入配置中心的第三方 Go 服务开发者、前端集成人员和部署人员。版本核对日期：2026-11-16。
 
 ## 1. 功能说明
 
@@ -19,19 +19,17 @@
 
 后缀模式不会把 `Address` 中的协议、端口或路径附加到公网地址。调用方应读取配置中心返回的 `PublicAddress`，避免自行拼接。
 
-## 2. 使用哪个分支或 Tag
+## 2. 使用哪个 Tag
 
 SDK 仓库：[configcenter SDK（Azure DevOps）](https://dev.azure.com/Advantech-EBO/IoTSuite-Core-Component/_git/configcenter)。该仓库名称为 configcenter，与服务端仓库分属不同项目。
 
-| 项目/版本                      | 当前状态                                                             | 使用说明                                                                                        |
-| ------------------------------ | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| SDK `develop-2.1.7`          | 已核对远端，当前提交为 `29707218c8d7c764be92c3d849364d3cece407a0`  | 包含 `Router.UriPrefix`、`module.IsSuffixMode` 和 `module.IsSSL`；可用于本文 SDK 注册示例 |
-| SDK `v0.17.0`                | 不包含本次新增的 `UriPrefix` 及模式、协议公共配置常量              | 本功能不能按该 Tag 接入                                                                         |
-| SDK `module.SuffixPort` 常量 | 当前本地分支包含，尚未推送                                             | 当前远端分支请使用字符串键 `"suffix_port"`，不要直接引用该常量                                |
-| 服务端 `develop-2.1.7`       | 后缀功能在此分支开发，单端口 `suffixPort` 的最新修改在本地分支，尚未推送 | 部署方须提供包含单端口修改的构建；仅获取远端分支无法保证包含本文全部配置                        |
-| 本功能正式发布 Tag             | 尚未发布                                                             | 不要假定 `v0.18.0`、服务端 `v2.1.7` 等版本已经可用                                          |
+| 项目/版本                | 当前状态                                                             | 使用说明                                                                                   |
+| ------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| SDK `v0.18.0`          | 已发布，本文按该 Tag 核对                                             | 包含 `Router.UriPrefix`、`module.IsSuffixMode`、`module.IsSSL` 和 `module.SuffixPort` |
+| SDK `v0.17.0` 及更早版本 | 不包含本次新增的 `UriPrefix` 及模式、协议、端口公共配置常量          | 本功能不能按这些 Tag 接入                                                                  |
+| 服务端 `v2.1.7`        | 与本文配置项配套的服务端版本，尚未发布                                 | 部署方须提供包含单端口 `suffixPort` 的构建                                                |
 
-**当前可用于联调，尚不能按已发布版本直接交付生产。** 第三方使用前，请向提供方确认服务端已部署包含 `suffixPort` 的构建。SDK 可先使用上述远端分支并通过字符串键读取端口；正式发布后应切换到提供方确认的 Tag 或固定提交。
+SDK 已发布 `v0.18.0`，第三方可直接按该 Tag 接入。服务端版本请向提供方确认，确保其构建包含本文的 `isSuffixMode`、`isSSL`、`suffixPort` 配置项。
 
 ### 2.1 安装 SDK
 
@@ -41,17 +39,10 @@ SDK 仓库：[configcenter SDK（Azure DevOps）](https://dev.azure.com/Advantec
 # 已配置其他 GOPRIVATE 规则的环境，请将 dev.azure.com 追加到原有规则中。
 go env -w GOPRIVATE=dev.azure.com
 
-# 分支接入，适合联调。
-go get dev.azure.com/Advantech-EBO/IoTSuite-Core-Component/_git/configcenter.git@develop-2.1.7
+go get dev.azure.com/Advantech-EBO/IoTSuite-Core-Component/_git/configcenter.git@v0.18.0
 ```
 
-若需要固定到本文已核对的 SDK 提交，可改用：
-
-```bash
-go get dev.azure.com/Advantech-EBO/IoTSuite-Core-Component/_git/configcenter.git@29707218c8d7c764be92c3d849364d3cece407a0
-```
-
-加入业务代码后执行 `go mod tidy`，提交业务项目的 `go.mod` 和 `go.sum`。Go 会将分支或提交解析为可固定的版本；分支后续更新不会自动升级已锁定的依赖。
+加入业务代码后执行 `go mod tidy`，提交业务项目的 `go.mod` 和 `go.sum`。依赖固定在该 Tag 上，后续版本发布不会自动升级已锁定的依赖。
 
 ## 3. 部署方配置
 
@@ -128,7 +119,7 @@ $env:CONFIG_CENTER_ADDRESS = "192.168.55.1:10087"
 
 ### 4.2 注册路径并读取公共配置、公网地址
 
-以下示例兼容第 2 节已核对的远端 SDK 提交。将 `Address` 换成配置中心及网关可访问的实际后端地址。
+以下示例基于 SDK `v0.18.0`。将 `Address` 换成配置中心及网关可访问的实际后端地址。
 
 ```go
 package main
@@ -172,8 +163,7 @@ func main() {
         case <-ticker.C:
             modeText, modeOK := m.GetPublicConfig(module.IsSuffixMode)
             sslText, sslOK := m.GetPublicConfig(module.IsSSL)
-            // The currently published branch has no module.SuffixPort constant.
-            portText, portOK := m.GetPublicConfig("suffix_port")
+            portText, portOK := m.GetPublicConfig(module.SuffixPort)
             if !modeOK || !sslOK || !portOK {
                 log.Print("waiting for public configs; verify server version if this persists")
                 continue
@@ -203,19 +193,7 @@ func main() {
 
 SDK 默认保活与配置刷新间隔为 5 秒；刚启动时，配置和服务缓存可能尚未就绪。应处理键不存在、Router 不存在及空公网地址，不能把创建 `Module` 视为已完成注册和发现。
 
-将来包含统一端口常量的 SDK 版本发布后，可将：
-
-```go
-m.GetPublicConfig("suffix_port")
-```
-
-替换为：
-
-```go
-m.GetPublicConfig(module.SuffixPort)
-```
-
-业务语义不变。不要继续读取旧的 `suffix_http_port`、`suffix_https_port`，也不要继续使用旧的 `module.SuffixHttpPort`、`module.SuffixHttpsPort`。
+`module.SuffixPort` 为 `v0.18.0` 新增常量。不要继续读取旧的 `suffix_http_port`、`suffix_https_port`，也不要继续使用旧的 `module.SuffixHttpPort`、`module.SuffixHttpsPort`。
 
 ### 4.3 新增字段与公共配置键
 
@@ -224,7 +202,7 @@ m.GetPublicConfig(module.SuffixPort)
 | `configcenter.Router.UriPrefix`                   | Go 字段；protobuf 字段号为 14，JSON 字段名为 `uriPrefix`  |
 | `module.IsSuffixMode` / `is_suffix_mode`        | 字符串 `"false"` 或 `"true"`                            |
 | `module.IsSSL` / `is_ssl`                       | 字符串 `"false"` 或 `"true"`                            |
-| `"suffix_port"`；新版本常量 `module.SuffixPort` | 字符串形式的实际入口端口，如 `"80"`、`"443"`、`"433"` |
+| `module.SuffixPort` / `"suffix_port"`             | 字符串形式的实际入口端口，如 `"80"`、`"443"`、`"433"` |
 
 服务端启动参数 `suffixPort=0` 表示使用默认值；公共接口返回的是**解析后的实际端口**，不会因此返回 `"0"`。
 
@@ -269,12 +247,12 @@ curl http://192.168.55.1:10087/v1/services
 
 | 现象                                               | 检查项                                                                          |
 | -------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Go 编译提示 `unknown field UriPrefix`            | SDK 版本过旧；使用第 2 节的分支或固定提交                                       |
-| Go 编译提示 `undefined: module.SuffixPort`       | 当前远端分支尚无该常量；先使用字符串键 `"suffix_port"`                        |
+| Go 编译提示 `unknown field UriPrefix`            | SDK 版本过旧；升级到 `v0.18.0`                                                  |
+| Go 编译提示 `undefined: module.SuffixPort`       | SDK 版本低于 `v0.18.0`；升级到该 Tag                                            |
 | 公共配置中没有 `suffix_port`，却有两个旧端口字段 | 服务端仍是旧构建；升级到包含单端口配置的构建                                    |
 | 返回的公网地址为空                                 | 检查 `autoGeneratePublic`、注册路径、Excel 兜底路径；刚启动时还需等待缓存刷新 |
 | 地址仍沿用原有前缀规则                             | 检查 `isSuffixMode` 是否为 `true`，以及实际读取的 TOML/启动参数             |
 | 配置的 IP 与返回 IP 不一致                         | 非 K8s 使用现有 IP 检测与监控机制，向部署方核对实际入口 IP 来源                 |
 | 地址正确但访问失败或 404                           | 检查 DNS、证书、入口端口和网关路径转发，以及服务是否支持该前端路径              |
 
-正式对外交付时，提供方应补充已发布的 SDK Tag、包含单端口配置的服务端镜像版本，并确认第三方有私有仓库读取权限。本文列出的联调分支不替代正式版本发布。
+SDK 已发布 `v0.18.0`；正式对外交付时，提供方应补充包含单端口配置的服务端镜像版本，并确认第三方有该私有仓库的读取权限。
