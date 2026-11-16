@@ -13,7 +13,7 @@
 
 ## 2. 安装 SDK
 
-SDK `v0.18.0` 新增 `Router.UriPrefix` 字段。需要 Go 1.22 或更高版本，并具备 Azure DevOps 私有仓库的 Git 访问权限。
+SDK `v0.18.0` 只新增了 `Router.UriPrefix` 字段；`isSuffixMode`、`isSSL`、`suffixPort` 不在 SDK 中，是配置中心服务端的配置。需要 Go 1.22 或更高版本，并具备 Azure DevOps 私有仓库的 Git 访问权限。
 
 ```bash
 # 已配置其他 GOPRIVATE 规则的环境，请将 dev.azure.com 追加到原有规则中。
