@@ -93,6 +93,31 @@ export CONFIG_CENTER_ADDRESS=192.168.55.1:10087
 | `globalIP`           | string          | `domain` 为空时使用的入口 IP                                                  |
 | `autoGeneratePublic` | bool            | 设为 `true` 才会自动生成公网地址                                              |
 
+### 4.1 K8s（Helm）
+
+Helm values 会映射为 `--configCenter.*` 启动参数：
+
+| Helm 参数                     | 启动参数                            |
+| ----------------------------- | ----------------------------------- |
+| `values.isSuffixMode`       | `--configCenter.isSuffixMode`     |
+| `values.isSSL`              | `--configCenter.isSSL`            |
+| `values.suffixPort`         | `--configCenter.suffixPort`       |
+| `values.domain`             | `--configCenter.domain`           |
+| `values.autoGeneratePublic` | `--configCenter.autoGeneratePublic` |
+
+```bash
+helm upgrade --install configcenter ./charts/configcenter \
+  --set values.isSuffixMode=true \
+  --set values.autoGeneratePublic=true \
+  --set values.isSSL=true \
+  --set values.suffixPort=0 \
+  --set values.domain=gateway.example.com
+```
+
+### 4.2 Docker/二进制部署
+
+使用 `config.toml` 或启动参数：
+
 ```toml
 [configCenter]
 isSuffixMode = true
